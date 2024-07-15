@@ -2,7 +2,8 @@
 import { default as NextImage } from "next/image";
 import styles from "./Carousel.module.css";
 import { Box } from "@mantine/core";
-import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useMemo, useState } from "react";
+import { useResizeObserver } from "@mantine/hooks";
 
 const imagesList = [
   "https://via.placeholder.com/800x400",
@@ -42,8 +43,9 @@ ImagesContainer.displayName = "ImagesContainer";
 
 export function Carousel() {
   const [loaded, setLoaded] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null!);
-  const carouselRef = useRef<HTMLUListElement>(null!);
+
+  const [carouselRef, carouselRect] = useResizeObserver();
+  const [wrapperRef, wrapperRect] = useResizeObserver();
 
   useEffect(() => {
     setTimeout(() => setLoaded(true), 0);
@@ -53,8 +55,8 @@ export function Carousel() {
     if (!loaded || typeof window === "undefined" || !carouselRef.current)
       return [];
 
-    const carouselWidth = carouselRef.current.getBoundingClientRect().width;
-    const wrapperWidth = wrapperRef.current.getBoundingClientRect().width;
+    const carouselWidth = carouselRect.width;
+    const wrapperWidth = wrapperRect.width;
     const replicaCount = Math.ceil(wrapperWidth / carouselWidth);
 
     let elements = [];
@@ -64,7 +66,7 @@ export function Carousel() {
       );
     }
     return elements;
-  }, [loaded]);
+  }, [loaded, carouselRect, wrapperRect]);
 
   const elements = [
     <ImagesContainer key="image_0" images={imagesList} ref={carouselRef} />,
