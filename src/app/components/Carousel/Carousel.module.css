@@ -1,0 +1,40 @@
+.image {
+  width: 100px;
+  height: auto;
+}
+
+.wrapper {
+  display: block;
+  width: 100vw;
+  white-space: nowrap;
+  overflow: hidden;
+  margin: 0;
+}
+
+.carousel {
+  display: inline-block;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.carouselItem {
+  display: inline-block;
+  margin: 0;
+  margin-right: 4rem;
+  list-style: none;
+}
+
+.animated {
+  .carousel {
+    animation: slide 12s linear infinite;
+  }
+}
+
+@keyframes slide {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
