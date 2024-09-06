@@ -26,8 +26,7 @@
 
 .animated {
   .carousel {
-    animation: slide 5s linear infinite;
-    animation-fill-mode: forwards;
+    animation: slide 12s linear infinite;
   }
 }
 

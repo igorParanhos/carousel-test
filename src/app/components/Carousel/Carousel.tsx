@@ -2,16 +2,22 @@
 import { default as NextImage } from "next/image";
 import styles from "./Carousel.module.css";
 import { Box } from "@mantine/core";
-import { forwardRef, useEffect, useMemo, useState } from "react";
+import { ReactEventHandler, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useResizeObserver } from "@mantine/hooks";
 
-const imagesList = [
+// This is the list of images that will be displayed in the carousel.
+const imageUrls = [
   "https://via.placeholder.com/800x400",
   "https://via.placeholder.com/800x400",
   "https://via.placeholder.com/800x400",
 ];
-
-function Image({ src }: { src: string }) {
+function Image({
+  src,
+  onImageLoad,
+}: {
+  src: string;
+  onImageLoad?: ReactEventHandler<HTMLImageElement>;
+}) {
   return (
     <NextImage
       className={styles.image}
@@ -19,40 +25,53 @@ function Image({ src }: { src: string }) {
       height="0"
       src={src}
       alt="placeholder"
+      onLoad={onImageLoad}
     />
   );
 }
 
 type ImagesContainerProps = {
   images: string[];
+  onLoadComplete?: () => void;
 };
 
 export const ImagesContainer = forwardRef<
   HTMLUListElement,
   ImagesContainerProps
->(({ images }, ref) => (
-  <Box component="ul" className={styles.carousel} ref={ref}>
-    {images.map((src, index) => (
-      <li key={index} className={styles.carouselItem}>
-        <Image aria-label="test" src={src} />
-      </li>
-    ))}
-  </Box>
-));
+>(({ images, onLoadComplete }, ref) => {
+  const loadedImagesCount = useRef(0);
+
+  const setLoaded = useCallback(() => {
+    loadedImagesCount.current += 1;
+    if (loadedImagesCount.current === images.length) {
+      onLoadComplete?.();
+    }
+  }, []);
+
+  return (
+    <Box component="ul" className={styles.carousel} ref={ref}>
+      {images.map((imageUrl, index) => (
+        <li key={index} className={styles.carouselItem}>
+          <Image aria-label="test" onImageLoad={onLoadComplete ? setLoaded : undefined} src={imageUrl} />
+        </li>
+      ))}
+    </Box>
+  );
+});
 ImagesContainer.displayName = "ImagesContainer";
 
 export function Carousel() {
-  const [loaded, setLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const [carouselRef, carouselRect] = useResizeObserver();
   const [wrapperRef, wrapperRect] = useResizeObserver();
 
-  useEffect(() => {
-    setTimeout(() => setLoaded(true), 0);
-  }, []);
+  const handleImageLoad = () => {
+    setIsLoaded(true);
+  };
 
   const replicas = useMemo(() => {
-    if (!loaded || typeof window === "undefined" || !carouselRef.current)
+    if (!isLoaded || typeof window === "undefined" || !carouselRef.current)
       return [];
 
     const carouselWidth = carouselRect.width;
@@ -62,22 +81,34 @@ export function Carousel() {
     let elements = [];
     for (let i = 0; i < replicaCount; i++) {
       elements.push(
-        <ImagesContainer key={`image_${i + 1}`} images={imagesList} />
+        <ImagesContainer
+          key={`image_${i + 1}`}
+          images={imageUrls}
+          onLoadComplete={handleImageLoad}
+        />
       );
     }
     return elements;
-  }, [loaded, carouselRect, wrapperRect]);
+  }, [isLoaded, carouselRect, wrapperRect]);
 
-  const elements = [
-    <ImagesContainer key="image_0" images={imagesList} ref={carouselRef} />,
-    ...replicas,
-  ];
+  const elements = useMemo(
+    () => [
+      <ImagesContainer
+        key="image_0"
+        images={imageUrls}
+        ref={carouselRef}
+        onLoadComplete={handleImageLoad}
+      />,
+      ...replicas,
+    ],
+    [replicas]
+  );
 
   return (
     <Box
       ref={wrapperRef}
       component="div"
-      className={`${styles.wrapper} ${loaded ? styles.animated : ""}`}
+      className={`${styles.wrapper} ${isLoaded ? styles.animated : ""}`}
     >
       {elements}
     </Box>
